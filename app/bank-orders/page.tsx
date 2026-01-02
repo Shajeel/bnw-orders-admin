@@ -7,6 +7,7 @@ import { Button, Table, Badge, Loader } from '@/components';
 import ImportOrdersModal from '@/components/ImportOrdersModal';
 import PurchaseOrderFormModal from '@/components/PurchaseOrderFormModal';
 import CourierDispatchModal from '@/components/CourierDispatchModal';
+import BulkPurchaseOrderModal from '@/components/BulkPurchaseOrderModal';
 import { bankOrderService } from '@/services/bankOrderService';
 import { purchaseOrderService } from '@/services/purchaseOrderService';
 import { courierService } from '@/services/courierService';
@@ -45,6 +46,12 @@ const BankOrdersPage = () => {
   // Challan print mode state
   const [isPrintChallanMode, setIsPrintChallanMode] = useState(false);
   const [selectedOrdersForPrint, setSelectedOrdersForPrint] = useState<string[]>([]);
+
+  // Bulk PO mode state
+  const [isBulkPOMode, setIsBulkPOMode] = useState(false);
+  const [selectedOrdersForBulkPO, setSelectedOrdersForBulkPO] = useState<string[]>([]);
+  const [isBulkPOModalOpen, setIsBulkPOModalOpen] = useState(false);
+  const [isCreatingBulkPO, setIsCreatingBulkPO] = useState(false);
 
   // Debounce search term
   useEffect(() => {
@@ -284,6 +291,15 @@ const BankOrdersPage = () => {
   const handleTogglePrintChallanMode = () => {
     setIsPrintChallanMode(!isPrintChallanMode);
     setSelectedOrdersForPrint([]);
+    setIsBulkPOMode(false);
+    setSelectedOrdersForBulkPO([]);
+  };
+
+  const handleToggleBulkPOMode = () => {
+    setIsBulkPOMode(!isBulkPOMode);
+    setSelectedOrdersForBulkPO([]);
+    setIsPrintChallanMode(false);
+    setSelectedOrdersForPrint([]);
   };
 
   const handlePrintMultipleChallans = () => {
@@ -342,27 +358,128 @@ const BankOrdersPage = () => {
   };
 
   const handleToggleAllOrders = () => {
-    // Only select orders that have delivery challans
-    const ordersWithChallans = orders.filter(order => order.deliveryChallan);
+    if (isPrintChallanMode) {
+      // Only select orders that have delivery challans
+      const ordersWithChallans = orders.filter(order => order.deliveryChallan);
 
-    if (selectedOrdersForPrint.length === ordersWithChallans.length) {
-      // If all are selected, deselect all
-      setSelectedOrdersForPrint([]);
-    } else {
-      // Select all orders with challans
-      setSelectedOrdersForPrint(ordersWithChallans.map(order => order._id));
+      if (selectedOrdersForPrint.length === ordersWithChallans.length) {
+        setSelectedOrdersForPrint([]);
+      } else {
+        setSelectedOrdersForPrint(ordersWithChallans.map(order => order._id));
+      }
+    } else if (isBulkPOMode) {
+      // Only select orders with the same product
+      const eligibleOrders = getEligibleOrdersForBulkPO();
+
+      if (selectedOrdersForBulkPO.length === eligibleOrders.length) {
+        setSelectedOrdersForBulkPO([]);
+      } else {
+        setSelectedOrdersForBulkPO(eligibleOrders.map(order => order._id));
+      }
     }
   };
 
+  const getEligibleOrdersForBulkPO = () => {
+    // Group orders by product and return only groups with multiple orders
+    const productMap = new Map<string, BankOrder[]>();
+
+    orders.forEach(order => {
+      const key = order.product;
+      if (!productMap.has(key)) {
+        productMap.set(key, []);
+      }
+      productMap.get(key)!.push(order);
+    });
+
+    // Get all orders that have at least one other order with the same product
+    const eligibleOrders: BankOrder[] = [];
+    productMap.forEach((ordersGroup) => {
+      if (ordersGroup.length > 1) {
+        eligibleOrders.push(...ordersGroup);
+      }
+    });
+
+    return eligibleOrders;
+  };
+
+  const handleCreateBulkPO = () => {
+    if (selectedOrdersForBulkPO.length === 0) {
+      alert('Please select at least one order');
+      return;
+    }
+
+    const selectedOrders = orders.filter(order =>
+      selectedOrdersForBulkPO.includes(order._id)
+    );
+
+    // Check if all selected orders have the same product
+    const uniqueProducts = [...new Set(selectedOrders.map(o => o.product))];
+    if (uniqueProducts.length > 1) {
+      alert('All selected orders must have the same product. Please select orders with the same product.');
+      return;
+    }
+
+    setIsBulkPOModalOpen(true);
+  };
+
+  const handleSubmitBulkPO = async (data: { vendorId: string; unitPrice: number }) => {
+    try {
+      setIsCreatingBulkPO(true);
+
+      const selectedOrders = orders.filter(order =>
+        selectedOrdersForBulkPO.includes(order._id)
+      );
+
+      await purchaseOrderService.bulkCreate({
+        vendorId: data.vendorId,
+        unitPrice: data.unitPrice,
+        bankOrderIds: selectedOrders.map(o => o._id),
+      });
+
+      // Update all selected orders to "processing" status
+      await Promise.all(
+        selectedOrders.map(order =>
+          bankOrderService.updateStatus(order._id, 'processing')
+        )
+      );
+
+      setIsBulkPOModalOpen(false);
+      setIsBulkPOMode(false);
+      setSelectedOrdersForBulkPO([]);
+      fetchOrders();
+      alert(`Successfully created ${selectedOrders.length} purchase orders!`);
+    } catch (error: any) {
+      alert(error.message || 'Failed to create bulk purchase orders');
+    } finally {
+      setIsCreatingBulkPO(false);
+    }
+  };
+
+  const handleToggleBulkPOSelection = (orderId: string) => {
+    setSelectedOrdersForBulkPO((prev) =>
+      prev.includes(orderId)
+        ? prev.filter((id) => id !== orderId)
+        : [...prev, orderId]
+    );
+  };
+
+  const isOrderEligibleForBulkPO = (order: BankOrder) => {
+    const eligibleOrders = getEligibleOrdersForBulkPO();
+    return eligibleOrders.some(o => o._id === order._id);
+  };
+
   // Create columns array with conditional checkbox column
-  const checkboxColumn = isPrintChallanMode
+  const checkboxColumn = isPrintChallanMode || isBulkPOMode
     ? {
         header: (
           <input
             type="checkbox"
             checked={
-              orders.filter(o => o.deliveryChallan).length > 0 &&
-              selectedOrdersForPrint.length === orders.filter(o => o.deliveryChallan).length
+              isPrintChallanMode
+                ? orders.filter(o => o.deliveryChallan).length > 0 &&
+                  selectedOrdersForPrint.length === orders.filter(o => o.deliveryChallan).length
+                : getEligibleOrdersForBulkPO().length > 0 &&
+                  selectedOrdersForBulkPO.length === getEligibleOrdersForBulkPO().length
             }
             onChange={handleToggleAllOrders}
             className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
@@ -370,20 +487,38 @@ const BankOrdersPage = () => {
         ),
         accessor: 'checkbox',
         width: '50px',
-        render: (order: BankOrder) => (
-          <input
-            type="checkbox"
-            checked={selectedOrdersForPrint.includes(order._id)}
-            onChange={(e) => {
-              e.stopPropagation();
-              handleToggleOrderSelection(order._id);
-            }}
-            onClick={(e) => e.stopPropagation()}
-            disabled={!order.deliveryChallan}
-            className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            title={!order.deliveryChallan ? 'No delivery challan available' : ''}
-          />
-        ),
+        render: (order: BankOrder) => {
+          const isDisabled = isPrintChallanMode
+            ? !order.deliveryChallan
+            : !isOrderEligibleForBulkPO(order);
+
+          const isChecked = isPrintChallanMode
+            ? selectedOrdersForPrint.includes(order._id)
+            : selectedOrdersForBulkPO.includes(order._id);
+
+          const handleChange = isPrintChallanMode
+            ? handleToggleOrderSelection
+            : handleToggleBulkPOSelection;
+
+          const title = isPrintChallanMode
+            ? (!order.deliveryChallan ? 'No delivery challan available' : '')
+            : (!isOrderEligibleForBulkPO(order) ? 'No other orders with same product' : '');
+
+          return (
+            <input
+              type="checkbox"
+              checked={isChecked}
+              onChange={(e) => {
+                e.stopPropagation();
+                handleChange(order._id);
+              }}
+              onClick={(e) => e.stopPropagation()}
+              disabled={isDisabled}
+              className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              title={title}
+            />
+          );
+        },
       }
     : null;
 
@@ -622,8 +757,32 @@ const BankOrdersPage = () => {
                   Print Selected ({selectedOrdersForPrint.length})
                 </Button>
               </>
+            ) : isBulkPOMode ? (
+              <>
+                <span className="text-sm text-gray-600">
+                  {selectedOrdersForBulkPO.length} order{selectedOrdersForBulkPO.length !== 1 ? 's' : ''} selected
+                </span>
+                <Button variant="outline" onClick={handleToggleBulkPOMode}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={handleCreateBulkPO}
+                  disabled={selectedOrdersForBulkPO.length === 0}
+                >
+                  <ShoppingCart size={20} className="mr-2" />
+                  Create POs ({selectedOrdersForBulkPO.length})
+                </Button>
+              </>
             ) : (
               <>
+                <Button
+                  variant="outline"
+                  onClick={handleToggleBulkPOMode}
+                >
+                  <ShoppingCart size={20} className="mr-2" />
+                  Bulk Create PO
+                </Button>
                 <Button
                   variant="outline"
                   onClick={handleTogglePrintChallanMode}
@@ -892,6 +1051,20 @@ const BankOrdersPage = () => {
           defaultDeclaredValue={selectedOrderForDispatch?.redeemedPoints || 0}
           defaultProductDescription={selectedOrderForDispatch?.product || ''}
           isLoading={isDispatching}
+        />
+
+        {/* Bulk Purchase Order Modal */}
+        <BulkPurchaseOrderModal
+          isOpen={isBulkPOModalOpen}
+          onClose={() => setIsBulkPOModalOpen(false)}
+          onSubmit={handleSubmitBulkPO}
+          isLoading={isCreatingBulkPO}
+          orderCount={selectedOrdersForBulkPO.length}
+          productName={
+            selectedOrdersForBulkPO.length > 0
+              ? orders.find(o => o._id === selectedOrdersForBulkPO[0])?.product || ''
+              : ''
+          }
         />
       </div>
     </AdminLayout>

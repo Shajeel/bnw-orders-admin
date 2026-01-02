@@ -100,4 +100,17 @@ export const purchaseOrderService = {
     );
     return response.data;
   },
+
+  bulkCreate: async (data: {
+    vendorId: string;
+    unitPrice: number;
+    bankOrderIds?: string[];
+    bipOrderIds?: string[];
+  }): Promise<ApiResponse<PurchaseOrder[]>> => {
+    const response = await apiClient.post<ApiResponse<PurchaseOrder[]>>(
+      '/purchase-orders/bulk-create',
+      data
+    );
+    return response.data;
+  },
 };
