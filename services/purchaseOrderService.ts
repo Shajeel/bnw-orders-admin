@@ -76,4 +76,28 @@ export const purchaseOrderService = {
     );
     return response.data;
   },
+
+  bulkUpdate: async (data: {
+    updates: Array<{
+      poId: string;
+      products: Array<{
+        productId: string;
+        serialNumber: string;
+      }>;
+    }>;
+  }): Promise<ApiResponse> => {
+    const response = await apiClient.post<ApiResponse>(
+      '/purchase-orders/bulk-update',
+      data
+    );
+    return response.data;
+  },
+
+  cancel: async (id: string, reason: string): Promise<ApiResponse<PurchaseOrder>> => {
+    const encodedReason = encodeURIComponent(reason);
+    const response = await apiClient.post<ApiResponse<PurchaseOrder>>(
+      `/purchase-orders/${id}/cancel?reason=${encodedReason}`
+    );
+    return response.data;
+  },
 };

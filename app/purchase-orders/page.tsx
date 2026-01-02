@@ -7,7 +7,7 @@ import { Button, Table, SelectableTable, Badge, Loader, CombinedPOPreviewModal }
 import PurchaseOrderFormModal from '@/components/PurchaseOrderFormModal';
 import { purchaseOrderService } from '@/services/purchaseOrderService';
 import { PurchaseOrder, Vendor, Product, CombinedPOPreview } from '@/types';
-import { Plus, Eye, Edit, Trash2, Search, Layers } from 'lucide-react';
+import { Plus, Eye, Edit, Trash2, Search, Layers, XCircle } from 'lucide-react';
 
 type PurchaseOrderStatus = 'draft' | 'pending' | 'approved' | 'delivered' | 'cancelled' | 'merged';
 
@@ -33,6 +33,10 @@ const PurchaseOrdersPage = () => {
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   const [isCombining, setIsCombining] = useState(false);
+
+  // Serial number tracking state
+  const [serialNumbers, setSerialNumbers] = useState<Record<string, string>>({});
+  const [isUpdatingSerials, setIsUpdatingSerials] = useState(false);
 
   // Debounce search term
   useEffect(() => {
@@ -128,6 +132,27 @@ const PurchaseOrdersPage = () => {
       fetchPurchaseOrders();
     } catch (error: any) {
       alert(error.message || 'Failed to delete purchase order');
+    }
+  };
+
+  const handleCancel = async (id: string) => {
+    const reason = prompt('Please provide a reason for canceling this purchase order:');
+
+    if (reason === null) return; // User clicked cancel
+
+    if (!reason.trim()) {
+      alert('Cancellation reason is required');
+      return;
+    }
+
+    if (!confirm('Are you sure you want to cancel this purchase order?')) return;
+
+    try {
+      await purchaseOrderService.cancel(id, reason.trim());
+      fetchPurchaseOrders();
+      alert('Purchase order cancelled successfully');
+    } catch (error: any) {
+      alert(error.message || 'Failed to cancel purchase order');
     }
   };
 
@@ -260,6 +285,56 @@ const PurchaseOrdersPage = () => {
     }, 0);
   };
 
+  const handleSerialNumberChange = (poId: string, value: string) => {
+    setSerialNumbers(prev => ({
+      ...prev,
+      [poId]: value,
+    }));
+  };
+
+  const handleBulkUpdateSerialNumbers = async () => {
+    // Filter only POs with serial numbers entered
+    const updates = Object.entries(serialNumbers)
+      .filter(([_, serialNumber]) => serialNumber.trim() !== '')
+      .map(([poId, serialNumber]) => {
+        const po = purchaseOrders.find(p => p._id === poId);
+        if (!po || !po.products || po.products.length === 0) return null;
+
+        return {
+          poId,
+          products: [
+            {
+              productId: typeof po.products[0].productId === 'object'
+                ? (po.products[0].productId as Product)._id
+                : po.products[0].productId,
+              serialNumber: serialNumber.trim(),
+            },
+          ],
+        };
+      })
+      .filter(update => update !== null) as Array<{
+        poId: string;
+        products: Array<{ productId: string; serialNumber: string }>;
+      }>;
+
+    if (updates.length === 0) {
+      alert('Please enter at least one serial number');
+      return;
+    }
+
+    try {
+      setIsUpdatingSerials(true);
+      await purchaseOrderService.bulkUpdate({ updates });
+      alert(`Successfully updated ${updates.length} purchase order(s)`);
+      setSerialNumbers({});
+      fetchPurchaseOrders();
+    } catch (error: any) {
+      alert(error.message || 'Failed to update serial numbers');
+    } finally {
+      setIsUpdatingSerials(false);
+    }
+  };
+
   const columns = [
     {
       header: 'PO ID',
@@ -323,6 +398,32 @@ const PurchaseOrdersPage = () => {
       },
     },
     {
+      header: 'Serial Number',
+      accessor: 'products',
+      width: '180px',
+      render: (po: PurchaseOrder) => {
+        // Only show input for original POs (not merged)
+        if (po.isMerged) {
+          return <span className="text-gray-400 text-sm">N/A (Merged)</span>;
+        }
+
+        // Get existing serial number if any
+        const existingSerial = po.products?.[0]?.serialNumber || '';
+        const currentValue = serialNumbers[po._id] ?? existingSerial;
+
+        return (
+          <input
+            type="text"
+            value={currentValue}
+            onChange={(e) => handleSerialNumberChange(po._id, e.target.value)}
+            onClick={(e) => e.stopPropagation()}
+            placeholder="Enter serial #"
+            className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+        );
+      },
+    },
+    {
       header: 'Created At',
       accessor: 'createdAt',
       width: '120px',
@@ -335,7 +436,7 @@ const PurchaseOrdersPage = () => {
     {
       header: 'Actions',
       accessor: '_id',
-      width: '140px',
+      width: '180px',
       render: (po: PurchaseOrder) => (
         <div className="flex items-center gap-2">
           <button
@@ -357,6 +458,17 @@ const PurchaseOrdersPage = () => {
             title="Edit"
           >
             <Edit size={18} />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCancel(po._id);
+            }}
+            className="text-orange-600 hover:text-orange-800"
+            title="Cancel PO"
+            disabled={po.status === 'cancelled' || po.status === 'delivered'}
+          >
+            <XCircle size={18} />
           </button>
           <button
             onClick={(e) => {
@@ -400,6 +512,14 @@ const PurchaseOrdersPage = () => {
               </>
             ) : (
               <>
+                <Button
+                  variant="outline"
+                  onClick={handleBulkUpdateSerialNumbers}
+                  disabled={isUpdatingSerials || Object.keys(serialNumbers).length === 0}
+                  isLoading={isUpdatingSerials}
+                >
+                  Save Serial Numbers
+                </Button>
                 <Button variant="outline" onClick={handleToggleCombineMode}>
                   <Layers size={20} className="mr-2" />
                   Combine POs

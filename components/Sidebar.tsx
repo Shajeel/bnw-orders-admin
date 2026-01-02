@@ -12,6 +12,7 @@ import {
   FolderTree,
   Building2,
   FileText,
+  Truck,
 } from 'lucide-react';
 
 interface MenuItem {
@@ -35,6 +36,11 @@ const menuItems: MenuItem[] = [
     label: 'BIP Orders',
     href: '/bip-orders',
     icon: <FileText size={20} />,
+  },
+  {
+    label: 'Delivery Challans',
+    href: '/delivery-challans',
+    icon: <Truck size={20} />,
   },
   {
     label: 'Products',

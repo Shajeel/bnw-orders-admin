@@ -9,3 +9,4 @@ export * from './category';
 export * from './bank';
 export * from './courier';
 export * from './dashboard';
+export * from './deliveryChallan';

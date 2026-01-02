@@ -10,8 +10,9 @@ import CourierDispatchModal from '@/components/CourierDispatchModal';
 import { bankOrderService } from '@/services/bankOrderService';
 import { purchaseOrderService } from '@/services/purchaseOrderService';
 import { courierService } from '@/services/courierService';
+import { deliveryService } from '@/services/deliveryService';
 import { BankOrder, OrderStatus, DispatchOrderRequest } from '@/types';
-import { Edit, Trash2, Eye, Search, ArrowUpDown, ArrowUp, ArrowDown, Upload, ShoppingCart, Truck } from 'lucide-react';
+import { Edit, Trash2, Eye, Search, ArrowUpDown, ArrowUp, ArrowDown, Upload, ShoppingCart, Truck, Printer, FileText } from 'lucide-react';
 
 type SortField = 'poNumber' | 'customerName' | 'product' | 'orderDate' | 'city' | 'redeemedPoints';
 type SortOrder = 'asc' | 'desc';
@@ -30,6 +31,8 @@ const BankOrdersPage = () => {
   const [sortField, setSortField] = useState<SortField>('orderDate');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [statusFilter, setStatusFilter] = useState<'all' | OrderStatus>('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [isPOModalOpen, setIsPOModalOpen] = useState(false);
@@ -38,6 +41,10 @@ const BankOrdersPage = () => {
   const [isDispatchModalOpen, setIsDispatchModalOpen] = useState(false);
   const [selectedOrderForDispatch, setSelectedOrderForDispatch] = useState<BankOrder | null>(null);
   const [isDispatching, setIsDispatching] = useState(false);
+
+  // Challan print mode state
+  const [isPrintChallanMode, setIsPrintChallanMode] = useState(false);
+  const [selectedOrdersForPrint, setSelectedOrdersForPrint] = useState<string[]>([]);
 
   // Debounce search term
   useEffect(() => {
@@ -54,7 +61,7 @@ const BankOrdersPage = () => {
   // Fetch orders whenever dependencies change
   useEffect(() => {
     fetchOrders();
-  }, [currentPage, pageSize, sortField, sortOrder, debouncedSearchTerm, searchField, statusFilter]);
+  }, [currentPage, pageSize, sortField, sortOrder, debouncedSearchTerm, searchField, statusFilter, startDate, endDate]);
 
   const fetchOrders = async () => {
     try {
@@ -64,8 +71,6 @@ const BankOrdersPage = () => {
       const params: any = {
         page: currentPage,
         limit: pageSize,
-        sortBy: sortField,
-        sortOrder: sortOrder,
       };
 
       // Only add search params if debouncedSearchTerm exists
@@ -78,6 +83,17 @@ const BankOrdersPage = () => {
 
       if (statusFilter !== 'all') {
         params.status = statusFilter;
+      }
+
+      if (startDate) {
+        params.startDate = new Date(startDate).toISOString();
+      }
+
+      if (endDate) {
+        // Set to end of day for endDate
+        const endDateTime = new Date(endDate);
+        endDateTime.setHours(23, 59, 59, 999);
+        params.endDate = endDateTime.toISOString();
       }
 
       console.log('[Bank Orders] Fetching with params:', params);
@@ -209,6 +225,19 @@ const BankOrdersPage = () => {
         ? await courierService.manualDispatchBankOrder(selectedOrderForDispatch._id, data)
         : await courierService.dispatchBankOrder(selectedOrderForDispatch._id, data);
 
+      // Automatically create delivery challan after successful dispatch
+      try {
+        await deliveryService.create({
+          bankOrderId: selectedOrderForDispatch._id,
+          courierCompany: data.courierType.toUpperCase(),
+          trackingNumber: response.data.trackingNumber,
+          dispatchDate: new Date().toISOString(),
+        });
+      } catch (deliveryError: any) {
+        console.error('Failed to create delivery challan:', deliveryError);
+        // Don't fail the entire dispatch if delivery challan creation fails
+      }
+
       handleCloseDispatchModal();
       fetchOrders(); // Refresh to show updated status
       alert(`Order dispatched successfully!\nTracking Number: ${response.data.trackingNumber}`);
@@ -217,6 +246,65 @@ const BankOrdersPage = () => {
     } finally {
       setIsDispatching(false);
     }
+  };
+
+  const handlePrintLabel = (order: BankOrder) => {
+    if (!order.shipmentId || typeof order.shipmentId === 'string') {
+      alert('No shipment information available');
+      return;
+    }
+
+    const consignmentNumber = order.shipmentId.consignmentNumber;
+    if (!consignmentNumber) {
+      alert('Consignment number not available');
+      return;
+    }
+
+    const accessToken = process.env.NEXT_PUBLIC_TCS_ACCESS_TOKEN;
+    if (!accessToken) {
+      alert('TCS access token not configured');
+      return;
+    }
+
+    const printUrl = `https://devconnect.tcscourier.com/ecom/api/print/label?accesstoken=${encodeURIComponent(accessToken)}&consignmentno=${consignmentNumber}&shipperDetails=false&printtype=2`;
+    window.open(printUrl, '_blank');
+  };
+
+  const handleViewChallan = (order: BankOrder) => {
+    if (!order.deliveryChallan) {
+      alert('Delivery challan not available');
+      return;
+    }
+
+    // Construct the full URL using the API base URL
+    const pdfUrl = `${order.deliveryChallan.pdfURLPath}`;
+    window.open(pdfUrl, '_blank');
+  };
+
+  const handleTogglePrintChallanMode = () => {
+    setIsPrintChallanMode(!isPrintChallanMode);
+    setSelectedOrdersForPrint([]);
+  };
+
+  const handlePrintMultipleChallans = () => {
+    if (selectedOrdersForPrint.length === 0) {
+      alert('Please select at least one order');
+      return;
+    }
+
+    // Get selected orders
+    const selectedOrders = orders.filter(order =>
+      selectedOrdersForPrint.includes(order._id) && order.deliveryChallan
+    );
+
+    if (selectedOrders.length === 0) {
+      alert('No delivery challans available for selected orders');
+      return;
+    }
+
+    // Pass bank order IDs to print page
+    const orderIds = selectedOrders.map(order => order._id).join(',');
+    router.push(`/print-challans?type=bank&ids=${encodeURIComponent(orderIds)}`);
   };
 
   const handleSort = (field: SortField) => {
@@ -245,7 +333,61 @@ const BankOrdersPage = () => {
     return new Intl.NumberFormat('en-US').format(Math.abs(points));
   };
 
-  const columns = [
+  const handleToggleOrderSelection = (orderId: string) => {
+    setSelectedOrdersForPrint((prev) =>
+      prev.includes(orderId)
+        ? prev.filter((id) => id !== orderId)
+        : [...prev, orderId]
+    );
+  };
+
+  const handleToggleAllOrders = () => {
+    // Only select orders that have delivery challans
+    const ordersWithChallans = orders.filter(order => order.deliveryChallan);
+
+    if (selectedOrdersForPrint.length === ordersWithChallans.length) {
+      // If all are selected, deselect all
+      setSelectedOrdersForPrint([]);
+    } else {
+      // Select all orders with challans
+      setSelectedOrdersForPrint(ordersWithChallans.map(order => order._id));
+    }
+  };
+
+  // Create columns array with conditional checkbox column
+  const checkboxColumn = isPrintChallanMode
+    ? {
+        header: (
+          <input
+            type="checkbox"
+            checked={
+              orders.filter(o => o.deliveryChallan).length > 0 &&
+              selectedOrdersForPrint.length === orders.filter(o => o.deliveryChallan).length
+            }
+            onChange={handleToggleAllOrders}
+            className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+          />
+        ),
+        accessor: 'checkbox',
+        width: '50px',
+        render: (order: BankOrder) => (
+          <input
+            type="checkbox"
+            checked={selectedOrdersForPrint.includes(order._id)}
+            onChange={(e) => {
+              e.stopPropagation();
+              handleToggleOrderSelection(order._id);
+            }}
+            onClick={(e) => e.stopPropagation()}
+            disabled={!order.deliveryChallan}
+            className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            title={!order.deliveryChallan ? 'No delivery challan available' : ''}
+          />
+        ),
+      }
+    : null;
+
+  const baseColumns = [
     {
       header: (
         <button
@@ -377,7 +519,7 @@ const BankOrdersPage = () => {
     {
       header: 'Actions',
       accessor: '_id',
-      width: '160px',
+      width: '230px',
       render: (order: BankOrder) => (
         <div className="flex items-center gap-2">
           <button
@@ -412,6 +554,30 @@ const BankOrdersPage = () => {
               <Truck size={18} />
             </button>
           )}
+          {order.status === 'dispatch' && order.shipmentId && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePrintLabel(order);
+              }}
+              className="text-purple-600 hover:text-purple-800"
+              title="Print TCS Label"
+            >
+              <Printer size={18} />
+            </button>
+          )}
+          {order.deliveryChallan && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleViewChallan(order);
+              }}
+              className="text-indigo-600 hover:text-indigo-800"
+              title="View Delivery Challan"
+            >
+              <FileText size={18} />
+            </button>
+          )}
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -427,6 +593,9 @@ const BankOrdersPage = () => {
     },
   ];
 
+  // Combine columns based on print mode
+  const columns = checkboxColumn ? [checkboxColumn, ...baseColumns] : baseColumns;
+
   return (
     <AdminLayout>
       <div>
@@ -435,13 +604,43 @@ const BankOrdersPage = () => {
             <h1 className="text-2xl font-bold text-gray-900">Bank Orders</h1>
             <p className="text-gray-600 mt-1">Manage and track all bank redemption orders</p>
           </div>
-          <Button
-            variant="primary"
-            onClick={() => setIsImportModalOpen(true)}
-          >
-            <Upload size={20} className="mr-2" />
-            Import Orders
-          </Button>
+          <div className="flex items-center gap-3">
+            {isPrintChallanMode ? (
+              <>
+                <span className="text-sm text-gray-600">
+                  {selectedOrdersForPrint.length} order{selectedOrdersForPrint.length !== 1 ? 's' : ''} selected
+                </span>
+                <Button variant="outline" onClick={handleTogglePrintChallanMode}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={handlePrintMultipleChallans}
+                  disabled={selectedOrdersForPrint.length === 0}
+                >
+                  <Printer size={20} className="mr-2" />
+                  Print Selected ({selectedOrdersForPrint.length})
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={handleTogglePrintChallanMode}
+                >
+                  <Printer size={20} className="mr-2" />
+                  Print Challans
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={() => setIsImportModalOpen(true)}
+                >
+                  <Upload size={20} className="mr-2" />
+                  Import Orders
+                </Button>
+              </>
+            )}
+          </div>
         </div>
 
         <div className="bg-white rounded-lg shadow">
@@ -463,6 +662,35 @@ const BankOrdersPage = () => {
                   </div>
                 )}
               </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-600 whitespace-nowrap">Start Date:</label>
+                <input
+                    type="date"
+                    className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-600 whitespace-nowrap">End Date:</label>
+                <input
+                    type="date"
+                    className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                />
+              </div>
+              {(startDate || endDate) && (
+                  <button
+                      onClick={() => {
+                        setStartDate('');
+                        setEndDate('');
+                      }}
+                      className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                  >
+                    Clear Dates
+                  </button>
+              )}
               <div className="flex items-center gap-2">
                 <label className="text-sm text-gray-600 whitespace-nowrap">Search in:</label>
                 <select
@@ -492,6 +720,12 @@ const BankOrdersPage = () => {
                 </select>
               </div>
             </div>
+
+            {/* Date Filters */}
+            <div className="flex flex-wrap items-center gap-4 mt-4">
+
+            </div>
+
             {debouncedSearchTerm && (
               <div className="mt-3 flex items-center gap-2">
                 <span className="text-sm text-gray-600">

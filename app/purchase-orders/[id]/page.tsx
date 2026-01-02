@@ -6,7 +6,7 @@ import AdminLayout from '@/components/AdminLayout';
 import { Button, Loader, Badge } from '@/components';
 import { purchaseOrderService } from '@/services/purchaseOrderService';
 import { PurchaseOrder, Vendor, Product } from '@/types';
-import { ArrowLeft, Printer, Info } from 'lucide-react';
+import { ArrowLeft, Printer, Info, AlertCircle } from 'lucide-react';
 
 const PurchaseOrderDetailPage = () => {
   const router = useRouter();
@@ -158,6 +158,19 @@ const PurchaseOrderDetailPage = () => {
             </p>
             <p className="text-blue-600">
               Original POs: {purchaseOrder.originalPOIds.join(', ')}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Cancellation Reason Banner */}
+      {purchaseOrder.status === 'cancelled' && purchaseOrder.cancellationReason && (
+        <div className="mb-8 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+          <AlertCircle className="text-red-600 mt-0.5 flex-shrink-0" size={20} />
+          <div className="text-sm text-red-800">
+            <p className="font-medium mb-1">This purchase order has been cancelled</p>
+            <p className="text-red-600">
+              <span className="font-medium">Reason:</span> {purchaseOrder.cancellationReason}
             </p>
           </div>
         </div>

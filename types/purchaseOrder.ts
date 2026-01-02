@@ -7,6 +7,7 @@ export interface PurchaseOrderProduct {
   productId: string | Product;
   quantity: number;
   unitPrice: number;
+  serialNumber?: string;
 }
 
 export interface PurchaseOrder {
@@ -18,6 +19,7 @@ export interface PurchaseOrder {
   totalAmount?: number;
   status: 'draft' | 'pending' | 'approved' | 'delivered' | 'cancelled' | 'merged';
   notes?: string;
+  cancellationReason?: string;
   isMerged?: boolean;
   originalPOIds?: string[];
   mergedPOId?: string;

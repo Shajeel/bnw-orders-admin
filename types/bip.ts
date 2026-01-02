@@ -30,6 +30,16 @@ export interface BipOrder {
     status: 'booked' | 'in_transit' | 'delivered' | 'cancelled';
     bookingDate?: string;
   };
+  deliveryChallan?: {
+    _id: string;
+    challanNumber: string;
+    bipOrderId: string;
+    customerName: string;
+    trackingNumber: string;
+    challanDate: string;
+    pdfFilePath: string;
+    pdfURLPath: string;
+  };
   isDeleted?: boolean;
   createdAt: string;
   updatedAt: string;

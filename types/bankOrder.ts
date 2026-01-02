@@ -30,6 +30,16 @@ export interface BankOrder {
     status: 'booked' | 'in_transit' | 'delivered' | 'cancelled';
     bookingDate?: string;
   };
+  deliveryChallan?: {
+    _id: string;
+    challanNumber: string;
+    bankOrderId: string;
+    customerName: string;
+    trackingNumber: string;
+    challanDate: string;
+    pdfFilePath: string;
+    pdfURLPath: string;
+  };
   isDeleted: boolean;
   createdAt: string;
   updatedAt: string;

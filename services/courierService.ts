@@ -39,9 +39,11 @@ export const courierService = {
     orderId: string,
     data: DispatchOrderRequest
   ): Promise<ApiResponse<Shipment>> => {
+    // Exclude courierType and isManualDispatch from manual dispatch payload
+    const { courierType, isManualDispatch, ...manualData } = data;
     const response = await apiClient.post<ApiResponse<Shipment>>(
       `/shipments/dispatch/bank-order/${orderId}/manual`,
-      data
+      manualData
     );
     return response.data;
   },
@@ -51,9 +53,11 @@ export const courierService = {
     orderId: string,
     data: DispatchOrderRequest
   ): Promise<ApiResponse<Shipment>> => {
+    // Exclude courierType and isManualDispatch from manual dispatch payload
+    const { courierType, isManualDispatch, ...manualData } = data;
     const response = await apiClient.post<ApiResponse<Shipment>>(
       `/shipments/dispatch/bip-order/${orderId}/manual`,
-      data
+      manualData
     );
     return response.data;
   },

@@ -31,7 +31,7 @@ const CourierDispatchModal: React.FC<CourierDispatchModalProps> = ({
   const [selectedCourier, setSelectedCourier] = useState<'tcs' | 'leopards' | ''>('');
   const [declaredValue, setDeclaredValue] = useState<string>(defaultDeclaredValue.toString());
   const [productDescription, setProductDescription] = useState<string>(defaultProductDescription);
-  const [specialInstructions, setSpecialInstructions] = useState<string>('');
+  const [remarks, setRemarks] = useState<string>('');
   const [trackingNumber, setTrackingNumber] = useState<string>('');
   const [consignmentNumber, setConsignmentNumber] = useState<string>('');
   const [error, setError] = useState('');
@@ -47,6 +47,7 @@ const CourierDispatchModal: React.FC<CourierDispatchModalProps> = ({
     }
   }, [isOpen, defaultDeclaredValue, defaultProductDescription]);
   useEffect(() => {
+    console.log(selectedCourierObj)
      setIsManualDispatch(selectedCourierObj?.isManualDispatch);
   }, [selectedCourier]);
 
@@ -90,11 +91,11 @@ const CourierDispatchModal: React.FC<CourierDispatchModalProps> = ({
 
     const dispatchData: DispatchOrderRequest = {
       courierType: selectedCourier,
-      isManualDispatch,
     };
 
     // Add manual dispatch fields if manual mode
     if (isManualDispatch) {
+      dispatchData.isManualDispatch = isManualDispatch;
       dispatchData.trackingNumber = trackingNumber.trim();
       dispatchData.consignmentNumber = consignmentNumber.trim();
     }
@@ -109,8 +110,8 @@ const CourierDispatchModal: React.FC<CourierDispatchModalProps> = ({
       dispatchData.productDescription = productDescription.trim();
     }
 
-    if (specialInstructions.trim()) {
-      dispatchData.specialInstructions = specialInstructions.trim();
+    if (remarks.trim()) {
+      dispatchData.remarks = remarks.trim();
     }
 
     try {
@@ -125,7 +126,7 @@ const CourierDispatchModal: React.FC<CourierDispatchModalProps> = ({
     setSelectedCourier('');
     setDeclaredValue('0');
     setProductDescription('');
-    setSpecialInstructions('');
+    setRemarks('');
     setTrackingNumber('');
     setConsignmentNumber('');
     setError('');
@@ -306,14 +307,14 @@ const CourierDispatchModal: React.FC<CourierDispatchModalProps> = ({
                 </p>
               </div>
 
-              {/* Special Instructions */}
+              {/* Remarks */}
               <div>
                 <label className="block mb-2.5 text-sm font-semibold text-gray-700">
-                  Special Instructions (Optional)
+                  Remarks (Optional)
                 </label>
                 <textarea
-                  value={specialInstructions}
-                  onChange={(e) => setSpecialInstructions(e.target.value)}
+                  value={remarks}
+                  onChange={(e) => setRemarks(e.target.value)}
                   rows={3}
                   placeholder="e.g., Handle with care, Fragile, Call before delivery"
                   className="bg-white border-2 border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 block w-full px-4 py-3 transition-all duration-200 placeholder:text-gray-400 resize-none"
