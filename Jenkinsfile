@@ -155,9 +155,7 @@ pipeline {
         stage('Push to Registry') {
             when {
                 anyOf {
-                    branch 'develop'
-                    branch 'staging'
-                    branch 'production'
+                    branch 'master'
                 }
             }
             steps {
@@ -167,11 +165,7 @@ pipeline {
                     try {
                         docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-softzee') {
                             sh "docker push ${IMAGE_TAG}"
-                            if (GIT_BRANCH in ['develop']) {
-                                sh "docker tag ${IMAGE_TAG} ${DEVELOP_TAG}"
-                                sh "docker push ${DEVELOP_TAG}"
-                            }
-                            if (GIT_BRANCH in ['production']) {
+                            if (GIT_BRANCH in ['master']) {
                                 sh "docker tag ${IMAGE_TAG} ${LATEST_TAG}"
                                 sh "docker push ${LATEST_TAG}"
                             }
