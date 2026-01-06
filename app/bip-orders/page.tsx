@@ -8,12 +8,14 @@ import ImportBipOrdersModal from '@/components/ImportBipOrdersModal';
 import PurchaseOrderFormModal from '@/components/PurchaseOrderFormModal';
 import CourierDispatchModal from '@/components/CourierDispatchModal';
 import BulkPurchaseOrderModal from '@/components/BulkPurchaseOrderModal';
+import WhatsAppConfirmationModal from '@/components/WhatsAppConfirmationModal';
 import { bipService } from '@/services/bipService';
 import { purchaseOrderService } from '@/services/purchaseOrderService';
 import { courierService } from '@/services/courierService';
 import { deliveryService } from '@/services/deliveryService';
+import { whatsappService } from '@/services/whatsappService';
 import { BipOrder, OrderStatus, DispatchOrderRequest } from '@/types';
-import { Edit, Trash2, Eye, Search, ArrowUpDown, ArrowUp, ArrowDown, Upload, ShoppingCart, Truck, Printer, FileText } from 'lucide-react';
+import { Edit, Trash2, Eye, Search, ArrowUpDown, ArrowUp, ArrowDown, Upload, ShoppingCart, Truck, Printer, FileText, MessageCircle } from 'lucide-react';
 
 type SortField = 'poNumber' | 'customerName' | 'product' | 'orderDate' | 'city' | 'amount';
 type SortOrder = 'asc' | 'desc';
@@ -52,6 +54,12 @@ const BipOrdersPage = () => {
   const [selectedOrdersForBulkPO, setSelectedOrdersForBulkPO] = useState<string[]>([]);
   const [isBulkPOModalOpen, setIsBulkPOModalOpen] = useState(false);
   const [isCreatingBulkPO, setIsCreatingBulkPO] = useState(false);
+
+  // WhatsApp confirmation mode state
+  const [isWhatsAppMode, setIsWhatsAppMode] = useState(false);
+  const [selectedOrdersForWhatsApp, setSelectedOrdersForWhatsApp] = useState<string[]>([]);
+  const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
+  const [isSendingWhatsApp, setIsSendingWhatsApp] = useState(false);
 
   // Debounce search term
   useEffect(() => {
@@ -275,7 +283,7 @@ const BipOrdersPage = () => {
       return;
     }
 
-    const printUrl = `https://devconnect.tcscourier.com/ecom/api/print/label?accesstoken=${encodeURIComponent(accessToken)}&consignmentno=${consignmentNumber}&shipperDetails=false&printtype=2`;
+    const printUrl = `https://ociconnect.tcscourier.com/ecom/api/print/label?accesstoken=${encodeURIComponent(accessToken)}&consignmentno=${consignmentNumber}&shipperDetails=false&printtype=2`;
     window.open(printUrl, '_blank');
   };
 
@@ -294,6 +302,8 @@ const BipOrdersPage = () => {
     setSelectedOrdersForPrint([]);
     setIsBulkPOMode(false);
     setSelectedOrdersForBulkPO([]);
+    setIsWhatsAppMode(false);
+    setSelectedOrdersForWhatsApp([]);
   };
 
   const handleToggleBulkPOMode = () => {
@@ -301,6 +311,17 @@ const BipOrdersPage = () => {
     setSelectedOrdersForBulkPO([]);
     setIsPrintChallanMode(false);
     setSelectedOrdersForPrint([]);
+    setIsWhatsAppMode(false);
+    setSelectedOrdersForWhatsApp([]);
+  };
+
+  const handleToggleWhatsAppMode = () => {
+    setIsWhatsAppMode(!isWhatsAppMode);
+    setSelectedOrdersForWhatsApp([]);
+    setIsPrintChallanMode(false);
+    setSelectedOrdersForPrint([]);
+    setIsBulkPOMode(false);
+    setSelectedOrdersForBulkPO([]);
   };
 
   const handlePrintMultipleChallans = () => {
@@ -350,6 +371,13 @@ const BipOrdersPage = () => {
         setSelectedOrdersForBulkPO([]);
       } else {
         setSelectedOrdersForBulkPO(eligibleOrders.map(order => order._id));
+      }
+    } else if (isWhatsAppMode) {
+      // Select all orders for WhatsApp
+      if (selectedOrdersForWhatsApp.length === orders.length) {
+        setSelectedOrdersForWhatsApp([]);
+      } else {
+        setSelectedOrdersForWhatsApp(orders.map(order => order._id));
       }
     }
   };
@@ -443,6 +471,62 @@ const BipOrdersPage = () => {
     return eligibleOrders.some(o => o._id === order._id);
   };
 
+  const handleSendWhatsApp = () => {
+    if (selectedOrdersForWhatsApp.length === 0) {
+      alert('Please select at least one order');
+      return;
+    }
+
+    setIsWhatsAppModalOpen(true);
+  };
+
+  const handleSubmitWhatsApp = async (flowId: number) => {
+    try {
+      setIsSendingWhatsApp(true);
+
+      const selectedOrders = orders.filter(order =>
+        selectedOrdersForWhatsApp.includes(order._id)
+      );
+
+      const ordersData = selectedOrders.map(order => ({
+        phone: order.mobile.startsWith('+92') ? order.mobile : `+92${order.mobile.replace(/^0+/, '')}`,
+        customerName: order.customerName,
+        orderNumber: order.poNumber,
+        orderPrice: order.amount,
+      }));
+
+      const result = await whatsappService.sendBulkOrderConfirmations(ordersData, flowId);
+
+      setIsWhatsAppModalOpen(false);
+      setIsWhatsAppMode(false);
+      setSelectedOrdersForWhatsApp([]);
+
+      if (result.failed > 0) {
+        const errorDetails = result.errors.map(e => `${e.orderNumber}: ${e.error}`).join('\n');
+        alert(
+          `WhatsApp confirmations sent!\n\n` +
+          `Success: ${result.success}\n` +
+          `Failed: ${result.failed}\n\n` +
+          `Failed orders:\n${errorDetails}`
+        );
+      } else {
+        alert(`Successfully sent WhatsApp confirmations to ${result.success} customer${result.success !== 1 ? 's' : ''}!`);
+      }
+    } catch (error: any) {
+      alert(error.message || 'Failed to send WhatsApp confirmations');
+    } finally {
+      setIsSendingWhatsApp(false);
+    }
+  };
+
+  const handleToggleWhatsAppSelection = (orderId: string) => {
+    setSelectedOrdersForWhatsApp((prev) =>
+      prev.includes(orderId)
+        ? prev.filter((id) => id !== orderId)
+        : [...prev, orderId]
+    );
+  };
+
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -471,7 +555,7 @@ const BipOrdersPage = () => {
   };
 
   // Create columns array with conditional checkbox column
-  const checkboxColumn = isPrintChallanMode || isBulkPOMode
+  const checkboxColumn = isPrintChallanMode || isBulkPOMode || isWhatsAppMode
     ? {
         header: (
           <input
@@ -480,8 +564,11 @@ const BipOrdersPage = () => {
               isPrintChallanMode
                 ? orders.filter(o => o.deliveryChallan).length > 0 &&
                   selectedOrdersForPrint.length === orders.filter(o => o.deliveryChallan).length
-                : getEligibleOrdersForBulkPO().length > 0 &&
+                : isBulkPOMode
+                ? getEligibleOrdersForBulkPO().length > 0 &&
                   selectedOrdersForBulkPO.length === getEligibleOrdersForBulkPO().length
+                : orders.length > 0 &&
+                  selectedOrdersForWhatsApp.length === orders.length
             }
             onChange={handleToggleAllOrders}
             className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
@@ -492,19 +579,27 @@ const BipOrdersPage = () => {
         render: (order: BipOrder) => {
           const isDisabled = isPrintChallanMode
             ? !order.deliveryChallan
-            : !isOrderEligibleForBulkPO(order);
+            : isBulkPOMode
+            ? !isOrderEligibleForBulkPO(order)
+            : false;
 
           const isChecked = isPrintChallanMode
             ? selectedOrdersForPrint.includes(order._id)
-            : selectedOrdersForBulkPO.includes(order._id);
+            : isBulkPOMode
+            ? selectedOrdersForBulkPO.includes(order._id)
+            : selectedOrdersForWhatsApp.includes(order._id);
 
           const handleChange = isPrintChallanMode
             ? handleToggleOrderSelection
-            : handleToggleBulkPOSelection;
+            : isBulkPOMode
+            ? handleToggleBulkPOSelection
+            : handleToggleWhatsAppSelection;
 
           const title = isPrintChallanMode
             ? (!order.deliveryChallan ? 'No delivery challan available' : '')
-            : (!isOrderEligibleForBulkPO(order) ? 'No other orders with same product' : '');
+            : isBulkPOMode
+            ? (!isOrderEligibleForBulkPO(order) ? 'No other orders with same product' : '')
+            : '';
 
           return (
             <input
@@ -786,8 +881,32 @@ const BipOrdersPage = () => {
                   Create POs ({selectedOrdersForBulkPO.length})
                 </Button>
               </>
+            ) : isWhatsAppMode ? (
+              <>
+                <span className="text-sm text-gray-600">
+                  {selectedOrdersForWhatsApp.length} order{selectedOrdersForWhatsApp.length !== 1 ? 's' : ''} selected
+                </span>
+                <Button variant="outline" onClick={handleToggleWhatsAppMode}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={handleSendWhatsApp}
+                  disabled={selectedOrdersForWhatsApp.length === 0}
+                >
+                  <MessageCircle size={20} className="mr-2" />
+                  Send WhatsApp ({selectedOrdersForWhatsApp.length})
+                </Button>
+              </>
             ) : (
               <>
+                <Button
+                  variant="outline"
+                  onClick={handleToggleWhatsAppMode}
+                >
+                  <MessageCircle size={20} className="mr-2" />
+                  WhatsApp Confirm
+                </Button>
                 <Button
                   variant="outline"
                   onClick={handleToggleBulkPOMode}
@@ -1072,6 +1191,16 @@ const BipOrdersPage = () => {
               ? orders.find(o => o._id === selectedOrdersForBulkPO[0])?.product || ''
               : ''
           }
+        />
+
+        {/* WhatsApp Confirmation Modal */}
+        <WhatsAppConfirmationModal
+          isOpen={isWhatsAppModalOpen}
+          onClose={() => setIsWhatsAppModalOpen(false)}
+          onSubmit={handleSubmitWhatsApp}
+          isLoading={isSendingWhatsApp}
+          orderCount={selectedOrdersForWhatsApp.length}
+          orderType="BIP"
         />
       </div>
     </AdminLayout>
