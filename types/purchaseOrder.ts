@@ -12,6 +12,7 @@ export interface PurchaseOrderProduct {
 
 export interface PurchaseOrder {
   _id: string;
+  poNumber?: string;
   bipOrderId?: string | BipOrder;
   bankOrderId?: string | BankOrder;
   vendorId: string | Vendor;
@@ -56,11 +57,13 @@ export interface CombinedPOPreview {
     city?: string;
   };
   products: {
-    productName: string;
+    name: string;
+    productName?: string; // For backwards compatibility
     quantity: number;
     unitPrice: number;
     totalPrice: number;
     sourcePO: string;
+    bankProductNumber?: string;
   }[];
   totalAmount: number;
   originalPOsCount: number;

@@ -100,7 +100,7 @@ const BulkPurchaseOrderModal: React.FC<BulkPurchaseOrderModalProps> = ({
                 <option value="">Select Vendor</option>
                 {vendors.map((vendor) => (
                   <option key={vendor._id} value={vendor._id}>
-                    {vendor.name}
+                    {vendor.vendorName}
                   </option>
                 ))}
               </select>

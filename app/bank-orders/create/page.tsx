@@ -13,19 +13,28 @@ const CreateBankOrderPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState<CreateBankOrderDto>({
-    orderNumber: '',
+    cnic: '',
     customerName: '',
-    amount: 0,
-    paymentMethod: '',
-    bankName: '',
-    transactionId: '',
+    mobile1: '',
+    mobile2: '',
+    address: '',
+    city: '',
+    brand: '',
+    product: '',
+    giftCode: '',
+    productId: '',
+    qty: 1,
+    refNo: '',
+    poNumber: '',
+    orderDate: '',
+    redeemedPoints: 0,
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
-      [name]: name === 'amount' ? parseFloat(value) || 0 : value,
+      [name]: name === 'qty' || name === 'redeemedPoints' ? parseInt(value) || 0 : value,
     });
     if (errors[name]) {
       setErrors({ ...errors, [name]: '' });
@@ -35,17 +44,26 @@ const CreateBankOrderPage = () => {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.orderNumber.trim()) {
-      newErrors.orderNumber = 'Order number is required';
+    if (!formData.cnic.trim()) {
+      newErrors.cnic = 'CNIC is required';
     }
     if (!formData.customerName.trim()) {
       newErrors.customerName = 'Customer name is required';
     }
-    if (formData.amount <= 0) {
-      newErrors.amount = 'Amount must be greater than 0';
+    if (!formData.mobile1.trim()) {
+      newErrors.mobile1 = 'Mobile number is required';
     }
-    if (!formData.paymentMethod.trim()) {
-      newErrors.paymentMethod = 'Payment method is required';
+    if (!formData.address.trim()) {
+      newErrors.address = 'Address is required';
+    }
+    if (!formData.city.trim()) {
+      newErrors.city = 'City is required';
+    }
+    if (!formData.product.trim()) {
+      newErrors.product = 'Product is required';
+    }
+    if (formData.qty <= 0) {
+      newErrors.qty = 'Quantity must be greater than 0';
     }
 
     setErrors(newErrors);
@@ -86,13 +104,13 @@ const CreateBankOrderPage = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Input
-                label="Order Number"
-                name="orderNumber"
-                value={formData.orderNumber}
+                label="CNIC"
+                name="cnic"
+                value={formData.cnic}
                 onChange={handleChange}
-                error={errors.orderNumber}
+                error={errors.cnic}
                 required
-                placeholder="ORD-001"
+                placeholder="12345-1234567-1"
               />
 
               <Input
@@ -106,41 +124,120 @@ const CreateBankOrderPage = () => {
               />
 
               <Input
-                label="Amount"
-                name="amount"
+                label="Mobile 1"
+                name="mobile1"
+                value={formData.mobile1}
+                onChange={handleChange}
+                error={errors.mobile1}
+                required
+                placeholder="03001234567"
+              />
+
+              <Input
+                label="Mobile 2"
+                name="mobile2"
+                value={formData.mobile2 || ''}
+                onChange={handleChange}
+                placeholder="03001234567"
+              />
+
+              <Input
+                label="Address"
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+                error={errors.address}
+                required
+                placeholder="Street address"
+              />
+
+              <Input
+                label="City"
+                name="city"
+                value={formData.city}
+                onChange={handleChange}
+                error={errors.city}
+                required
+                placeholder="City name"
+              />
+
+              <Input
+                label="Brand"
+                name="brand"
+                value={formData.brand}
+                onChange={handleChange}
+                placeholder="Brand name"
+              />
+
+              <Input
+                label="Product"
+                name="product"
+                value={formData.product}
+                onChange={handleChange}
+                error={errors.product}
+                required
+                placeholder="Product name"
+              />
+
+              <Input
+                label="Gift Code"
+                name="giftCode"
+                value={formData.giftCode}
+                onChange={handleChange}
+                placeholder="Gift code"
+              />
+
+              <Input
+                label="Product ID"
+                name="productId"
+                value={formData.productId}
+                onChange={handleChange}
+                placeholder="Product ID"
+              />
+
+              <Input
+                label="Quantity"
+                name="qty"
                 type="number"
-                step="0.01"
-                value={formData.amount}
+                value={formData.qty}
                 onChange={handleChange}
-                error={errors.amount}
+                error={errors.qty}
                 required
-                placeholder="0.00"
+                placeholder="1"
               />
 
               <Input
-                label="Payment Method"
-                name="paymentMethod"
-                value={formData.paymentMethod}
+                label="Reference Number"
+                name="refNo"
+                value={formData.refNo}
                 onChange={handleChange}
-                error={errors.paymentMethod}
-                required
-                placeholder="Bank Transfer"
+                placeholder="Reference number"
               />
 
               <Input
-                label="Bank Name"
-                name="bankName"
-                value={formData.bankName || ''}
+                label="PO Number"
+                name="poNumber"
+                value={formData.poNumber}
                 onChange={handleChange}
-                placeholder="ABC Bank"
+                placeholder="PO number"
               />
 
               <Input
-                label="Transaction ID"
-                name="transactionId"
-                value={formData.transactionId || ''}
+                label="Order Date"
+                name="orderDate"
+                type="date"
+                value={formData.orderDate}
                 onChange={handleChange}
-                placeholder="TXN123456"
+                placeholder="Order date"
+              />
+
+              <Input
+                label="Redeemed Points"
+                name="redeemedPoints"
+                type="number"
+                value={formData.redeemedPoints}
+                onChange={handleChange}
+                placeholder="0"
               />
             </div>
 

@@ -38,7 +38,7 @@ const ProductDetailPage = () => {
 
       console.log('[Product Detail] Response:', response);
 
-      setProduct(response.data);
+      setProduct(response.data || null);
     } catch (error: any) {
       console.error('[Product Detail] Failed to fetch product:', error);
       setError(error.message || 'Failed to load product details');

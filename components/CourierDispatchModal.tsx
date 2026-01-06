@@ -48,7 +48,7 @@ const CourierDispatchModal: React.FC<CourierDispatchModalProps> = ({
   }, [isOpen, defaultDeclaredValue, defaultProductDescription]);
   useEffect(() => {
     console.log(selectedCourierObj)
-     setIsManualDispatch(selectedCourierObj?.isManualDispatch);
+     setIsManualDispatch(selectedCourierObj?.isManualDispatch || false);
   }, [selectedCourier]);
 
   const fetchCouriers = async () => {

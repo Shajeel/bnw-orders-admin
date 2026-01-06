@@ -1,4 +1,4 @@
-export type OrderStatus = 'Pending' | 'Confirmed' | 'Processing' | 'Dispatched' | 'Delivered';
+import { OrderStatus } from './bankOrder';
 
 export interface BipOrder {
   _id: string;

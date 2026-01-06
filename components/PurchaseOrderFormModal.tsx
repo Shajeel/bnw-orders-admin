@@ -218,7 +218,7 @@ const PurchaseOrderFormModal: React.FC<PurchaseOrderFormModalProps> = ({
       isOpen={isOpen}
       onClose={handleClose}
       title={purchaseOrder ? 'Edit Purchase Order' : 'Create Purchase Order'}
-      size="large"
+      size="xl"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {loadingData ? (

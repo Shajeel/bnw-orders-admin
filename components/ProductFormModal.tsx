@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { X } from 'lucide-react';
 import { productSchema, ProductFormData } from '@/types/validations/productSchema';
-import { Product, ProductCategory } from '@/types';
+import { Product, Category } from '@/types';
 import { categoryService } from '@/services/categoryService';
 import Button from './Button';
 
@@ -24,7 +24,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
   product,
   isLoading = false,
 }) => {
-  const [categories, setCategories] = useState<ProductCategory[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
 
   const {
@@ -65,7 +65,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
   useEffect(() => {
     if (product) {
       const categoryId = typeof product.categoryId === 'object' && product.categoryId !== null
-        ? (product.categoryId as ProductCategory)._id
+        ? (product.categoryId as Category)._id
         : product.categoryId as string;
 
       reset({

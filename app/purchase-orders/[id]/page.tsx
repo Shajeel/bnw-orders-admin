@@ -26,7 +26,7 @@ const PurchaseOrderDetailPage = () => {
     try {
       setIsLoading(true);
       const response = await purchaseOrderService.getById(id);
-      setPurchaseOrder(response.data);
+      setPurchaseOrder(response.data || null);
     } catch (error: any) {
       console.error('Failed to fetch purchase order:', error);
       alert('Failed to load purchase order details');
@@ -59,7 +59,7 @@ const PurchaseOrderDetailPage = () => {
       console.log(productId);
       const product = productId as Product;
       return {
-        name: product.productName,
+        name: product.name,
         giftCode: product.bankProductNumber || '-'
       };
     }
@@ -234,9 +234,9 @@ const PurchaseOrderDetailPage = () => {
                     <td className="py-3 px-4 text-sm text-gray-600">{index + 1}</td>
                     <td className="py-3 px-4 text-sm text-gray-900">
                       <div>
-                        <div className="font-medium">{product.productName}</div>
+                        <div className="font-medium">{productDetails.name}</div>
                         <div className="text-xs text-gray-600 mt-0.5">
-                          Gift Code: <span className="font-mono font-semibold">{product.bankProductNumber}</span>
+                          Gift Code: <span className="font-mono font-semibold">{productDetails.giftCode}</span>
                         </div>
                       </div>
                     </td>

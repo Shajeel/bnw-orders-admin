@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface Column<T> {
-  header: string;
+  header: string | React.ReactNode;
   accessor: keyof T | string;
   render?: (item: T) => React.ReactNode;
   width?: string;
@@ -15,7 +15,7 @@ interface TableProps<T> {
   emptyMessage?: string;
 }
 
-function Table<T extends { id: string | number }>({
+function Table<T extends { id?: string | number; _id?: string }>({
   columns,
   data,
   onRowClick,
@@ -58,7 +58,7 @@ function Table<T extends { id: string | number }>({
         <tbody>
           {data.map((item) => (
             <tr
-              key={item.id}
+              key={item.id || item._id}
               className={`bg-white border-b hover:bg-gray-50 ${
                 onRowClick ? 'cursor-pointer' : ''
               }`}

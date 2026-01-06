@@ -97,7 +97,7 @@ const CombinedPOPreviewModal: React.FC<CombinedPOPreviewModalProps> = ({
                   {preview.products.map((product, index) => (
                     <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="py-3 px-4 text-gray-600">{index + 1}</td>
-                      <td className="py-3 px-4 text-gray-900 font-medium">{product.productName}</td>
+                      <td className="py-3 px-4 text-gray-900 font-medium">{product.name}</td>
                       <td className="py-3 px-4">
                         <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded font-mono">
                           {product.sourcePO}

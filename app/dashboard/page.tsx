@@ -19,7 +19,7 @@ const DashboardPage = () => {
     try {
       setIsLoading(true);
       const response = await dashboardService.getStats();
-      setDashboardStats(response.data);
+      setDashboardStats(response.data || null);
     } catch (error: any) {
       console.error('Failed to fetch dashboard stats:', error);
     } finally {

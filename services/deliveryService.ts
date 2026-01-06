@@ -1,5 +1,5 @@
 import apiClient from '@/utils/axios';
-import { ApiResponse, DeliveryChallan } from '@/types';
+import { ApiResponse, DeliveryChallan, PaginatedResponse } from '@/types';
 
 export interface CreateDeliveryDto {
   bankOrderId?: string;
@@ -44,8 +44,8 @@ export const deliveryService = {
     limit?: number;
     search?: string;
     searchField?: string;
-  }): Promise<ApiResponse<DeliveryChallan[]>> => {
-    const response = await apiClient.get<ApiResponse<DeliveryChallan[]>>('/delivery-challans', { params });
+  }): Promise<PaginatedResponse<DeliveryChallan>> => {
+    const response = await apiClient.get<PaginatedResponse<DeliveryChallan>>('/delivery-challans', { params });
     return response.data;
   },
 };

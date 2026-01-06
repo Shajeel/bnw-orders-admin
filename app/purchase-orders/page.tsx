@@ -218,7 +218,7 @@ const PurchaseOrdersPage = () => {
       const response = await purchaseOrderService.previewCombined({
         poIds: selectedPOIds,
       });
-      setCombinedPreview(response.data);
+      setCombinedPreview(response.data || null);
     } catch (error: any) {
       alert(error.message || 'Failed to load preview');
       setIsPreviewModalOpen(false);
@@ -241,7 +241,9 @@ const PurchaseOrdersPage = () => {
       setSelectedPOIds([]);
 
       // Navigate to merged PO detail page where user can print
-      router.push(`/purchase-orders/${response.data._id}`);
+      if (response.data?._id) {
+        router.push(`/purchase-orders/${response.data._id}`);
+      }
     } catch (error: any) {
       alert(error.message || 'Failed to merge purchase orders');
       setIsCombining(false);

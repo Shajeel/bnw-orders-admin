@@ -38,7 +38,7 @@ const VendorDetailPage = () => {
 
       console.log('[Vendor Detail] Response:', response);
 
-      setVendor(response.data);
+      setVendor(response.data || null);
     } catch (error: any) {
       console.error('[Vendor Detail] Failed to fetch vendor:', error);
       setError(error.message || 'Failed to load vendor details');

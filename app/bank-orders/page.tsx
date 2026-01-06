@@ -196,9 +196,9 @@ const BankOrdersPage = () => {
       setIsSubmittingPO(true);
       await purchaseOrderService.create(data);
 
-      // Update the order status to "processing" after creating PO
+      // Update the order status to "Processing" after creating PO
       if (selectedOrderForPO) {
-        await bankOrderService.updateStatus(selectedOrderForPO._id, 'processing');
+        await bankOrderService.updateStatus(selectedOrderForPO._id, 'Processing');
       }
 
       handleClosePOModal();
@@ -234,12 +234,14 @@ const BankOrdersPage = () => {
 
       // Automatically create delivery challan after successful dispatch
       try {
-        await deliveryService.create({
-          bankOrderId: selectedOrderForDispatch._id,
-          courierCompany: data.courierType.toUpperCase(),
-          trackingNumber: response.data.trackingNumber,
-          dispatchDate: new Date().toISOString(),
-        });
+        if (response.data?.trackingNumber) {
+          await deliveryService.create({
+            bankOrderId: selectedOrderForDispatch._id,
+            courierCompany: data.courierType.toUpperCase(),
+            trackingNumber: response.data.trackingNumber,
+            dispatchDate: new Date().toISOString(),
+          });
+        }
       } catch (deliveryError: any) {
         console.error('Failed to create delivery challan:', deliveryError);
         // Don't fail the entire dispatch if delivery challan creation fails
@@ -247,7 +249,7 @@ const BankOrdersPage = () => {
 
       handleCloseDispatchModal();
       fetchOrders(); // Refresh to show updated status
-      alert(`Order dispatched successfully!\nTracking Number: ${response.data.trackingNumber}`);
+      alert(`Order dispatched successfully!\nTracking Number: ${response.data?.trackingNumber || 'N/A'}`);
     } catch (error: any) {
       throw new Error(error.message || 'Failed to dispatch order');
     } finally {
@@ -436,10 +438,10 @@ const BankOrdersPage = () => {
         bankOrderIds: selectedOrders.map(o => o._id),
       });
 
-      // Update all selected orders to "processing" status
+      // Update all selected orders to "Processing" status
       await Promise.all(
         selectedOrders.map(order =>
-          bankOrderService.updateStatus(order._id, 'processing')
+          bankOrderService.updateStatus(order._id, 'Processing')
         )
       );
 
@@ -642,11 +644,11 @@ const BankOrdersPage = () => {
             className="px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
             onClick={(e) => e.stopPropagation()}
           >
-            <option value="pending">Pending</option>
-            <option value="confirmed">Confirmed</option>
-            <option value="processing">Processing</option>
-            <option value="dispatch">Dispatched</option>
-            <option value="delivered">Delivered</option>
+            <option value="Pending">Pending</option>
+            <option value="Confirmed">Confirmed</option>
+            <option value="Processing">Processing</option>
+            <option value="Dispatched">Dispatched</option>
+            <option value="Delivered">Delivered</option>
           </select>
         </div>
       ),
@@ -677,7 +679,7 @@ const BankOrdersPage = () => {
           >
             <ShoppingCart size={18} />
           </button>
-          {order.status === 'processing' && (
+          {order.status === 'Processing' && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -689,7 +691,7 @@ const BankOrdersPage = () => {
               <Truck size={18} />
             </button>
           )}
-          {order.status === 'dispatch' && order.shipmentId && (
+          {order.status === 'Dispatched' && order.shipmentId && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -871,11 +873,11 @@ const BankOrdersPage = () => {
                   onChange={(e) => setStatusFilter(e.target.value as any)}
                 >
                   <option value="all">All Status</option>
-                  <option value="pending">Pending</option>
-                  <option value="confirmed">Confirmed</option>
-                  <option value="processing">Processing</option>
-                  <option value="dispatch">Dispatched</option>
-                  <option value="delivered">Delivered</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Confirmed">Confirmed</option>
+                  <option value="Processing">Processing</option>
+                  <option value="Dispatched">Dispatched</option>
+                  <option value="Delivered">Delivered</option>
                 </select>
               </div>
             </div>

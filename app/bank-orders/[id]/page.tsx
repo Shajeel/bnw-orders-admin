@@ -26,7 +26,7 @@ const BankOrderDetailPage = () => {
     try {
       setIsLoading(true);
       const response = await bankOrderService.getById(orderId);
-      setOrder(response.data);
+      setOrder(response.data || null);
     } catch (error: any) {
       console.error('Failed to fetch order details:', error);
       alert('Failed to load order details');

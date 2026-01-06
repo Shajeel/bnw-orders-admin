@@ -56,7 +56,7 @@ const CategoriesPage = () => {
     try {
       setIsSubmitting(true);
       if (selectedCategory) {
-        await categoryService.update(selectedCategory.id, data);
+        await categoryService.update(selectedCategory._id, data);
       } else {
         await categoryService.create(data);
       }
@@ -72,7 +72,7 @@ const CategoriesPage = () => {
   const handleToggleStatus = async (category: Category) => {
     const newStatus = category.status === 'active' ? 'inactive' : 'active';
     try {
-      await categoryService.toggleStatus(category.id, newStatus);
+      await categoryService.toggleStatus(category._id, newStatus);
       fetchCategories();
     } catch (error: any) {
       alert(error.message || 'Failed to update category status');
@@ -186,7 +186,7 @@ const CategoriesPage = () => {
                   <tbody className="divide-y divide-gray-200">
                     {categories.map((category) => (
                       <tr
-                        key={category.id}
+                        key={category._id}
                         className="hover:bg-gray-50 transition-colors"
                       >
                         <td className="px-6 py-4">
@@ -225,7 +225,7 @@ const CategoriesPage = () => {
                               <Edit size={18} />
                             </button>
                             <button
-                              onClick={() => handleDelete(category.id)}
+                              onClick={() => handleDelete(category._id)}
                               className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                               title="Delete category"
                             >

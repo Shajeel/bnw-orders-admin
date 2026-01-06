@@ -47,7 +47,7 @@ const BipOrderDetailPage = () => {
 
       console.log('[BIP Order Detail] Response:', response);
 
-      setOrder(response.data);
+      setOrder(response.data || null);
     } catch (error: any) {
       console.error('[BIP Order Detail] Failed to fetch order:', error);
       setError(error.message || 'Failed to load order details');
