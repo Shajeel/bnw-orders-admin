@@ -6,6 +6,7 @@ export interface BipOrder {
   cnic: string;
   customerName: string;
   mobile1: string;
+  mobile: string;
   authorizedReceiver: string;
   receiverCnic: string;
   address: string;

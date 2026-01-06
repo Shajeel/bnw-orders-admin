@@ -489,7 +489,7 @@ const BipOrdersPage = () => {
       );
 
       const ordersData = selectedOrders.map(order => ({
-        phone: order.mobile.startsWith('+92') ? order.mobile : `+92${order.mobile.replace(/^0+/, '')}`,
+        phone: order.mobile1.startsWith('+92') ? order.mobile1 : `+92${order.mobile1.replace(/^0+/, '')}`,
         customerName: order.customerName,
         orderNumber: order.poNumber,
         orderPrice: order.amount,
