@@ -120,7 +120,7 @@ pipeline {
                 script {
                     echo "🏗️ Building Next.js application..."
                     try {
-                        withEnv(['NEXT_PUBLIC_API_URL=/api']) {
+                        withEnv(['NEXT_PUBLIC_API_URL=/api/v1']) {
                             sh 'npm run build'
                         }
                     } catch (Exception e) {
