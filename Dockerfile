@@ -11,7 +11,6 @@ RUN adduser --system --uid 1001 nextjs
 # Copy the built application and dependencies from Jenkins build stage with correct ownership
 COPY --chown=nextjs:nodejs .next ./.next
 COPY --chown=nextjs:nodejs package.json ./
-
 COPY --chown=nextjs:nodejs node_modules/ node_modules/
 COPY --chown=nextjs:nodejs next.config.mjs ./
 
