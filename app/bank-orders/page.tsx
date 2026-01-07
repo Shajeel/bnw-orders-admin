@@ -469,7 +469,7 @@ const BankOrdersPage = () => {
       // Update all selected orders to "Processing" status
       await Promise.all(
         selectedOrders.map(order =>
-          bankOrderService.updateStatus(order._id, 'Processing')
+          bankOrderService.updateStatus(order._id, 'processing')
         )
       );
 
