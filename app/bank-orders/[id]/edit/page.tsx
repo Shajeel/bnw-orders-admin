@@ -32,7 +32,7 @@ const EditBankOrderPage = () => {
     poNumber: '',
     orderDate: '',
     redeemedPoints: 0,
-    status: 'Pending',
+    status: 'pending',
   });
 
   useEffect(() => {
