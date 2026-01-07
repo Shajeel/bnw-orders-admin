@@ -480,7 +480,7 @@ const BipOrdersPage = () => {
     setIsWhatsAppModalOpen(true);
   };
 
-  const handleSubmitWhatsApp = async (flowId: number) => {
+  const handleSubmitWhatsApp = async () => {
     try {
       setIsSendingWhatsApp(true);
 
@@ -1199,7 +1199,7 @@ const BipOrdersPage = () => {
         <WhatsAppConfirmationModal
           isOpen={isWhatsAppModalOpen}
           onClose={() => setIsWhatsAppModalOpen(false)}
-          onSubmit={()=>handleSubmitWhatsApp}
+          onSubmit={()=>handleSubmitWhatsApp()}
           isLoading={isSendingWhatsApp}
           orderCount={selectedOrdersForWhatsApp.length}
           orderType="BIP"
