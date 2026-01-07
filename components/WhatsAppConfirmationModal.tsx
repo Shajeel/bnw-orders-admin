@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Modal, Button } from '@/components';
 import { MessageCircle } from 'lucide-react';
 
 interface WhatsAppConfirmationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (flowId: number) => void;
+  onSubmit: () => void;
   isLoading: boolean;
   orderCount: number;
   orderType: 'Bank' | 'BIP';
@@ -21,26 +21,13 @@ const WhatsAppConfirmationModal: React.FC<WhatsAppConfirmationModalProps> = ({
   orderCount,
   orderType,
 }) => {
-  const [flowId, setFlowId] = useState('');
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!flowId || parseInt(flowId) <= 0) {
-      alert('Please enter a valid Flow ID');
-      return;
-    }
-
-    onSubmit(parseInt(flowId));
-  };
-
-  const handleClose = () => {
-    setFlowId('');
-    onClose();
+    onSubmit();
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Send WhatsApp Confirmations">
+    <Modal isOpen={isOpen} onClose={onClose} title="Send WhatsApp Confirmations">
       <form onSubmit={handleSubmit}>
         <div className="space-y-6">
           {/* Info Section */}
@@ -56,27 +43,6 @@ const WhatsAppConfirmationModal: React.FC<WhatsAppConfirmationModalProps> = ({
                 </p>
               </div>
             </div>
-          </div>
-
-          {/* Flow ID Input */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              WhatsApp Flow ID <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="number"
-              min="1"
-              step="1"
-              value={flowId}
-              onChange={(e) => setFlowId(e.target.value)}
-              placeholder="Enter Flow ID"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              required
-              disabled={isLoading}
-            />
-            <p className="mt-1 text-xs text-gray-500">
-              The Flow ID from TheWhatBot that will be triggered for each customer
-            </p>
           </div>
 
           {/* What will be sent */}
@@ -99,7 +65,15 @@ const WhatsAppConfirmationModal: React.FC<WhatsAppConfirmationModalProps> = ({
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-blue-600 mt-0.5">•</span>
-                <span>Order price (Redeemed Points)</span>
+                <span>Product name</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-blue-600 mt-0.5">•</span>
+                <span>Order total amount</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-blue-600 mt-0.5">•</span>
+                <span>Delivery address</span>
               </li>
             </ul>
           </div>
@@ -113,7 +87,7 @@ const WhatsAppConfirmationModal: React.FC<WhatsAppConfirmationModalProps> = ({
 
           {/* Action Buttons */}
           <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="outline" onClick={handleClose} disabled={isLoading}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
               Cancel
             </Button>
             <Button type="submit" variant="primary" isLoading={isLoading}>

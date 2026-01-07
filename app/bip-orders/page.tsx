@@ -493,6 +493,8 @@ const BipOrdersPage = () => {
         customerName: order.customerName,
         orderNumber: order.poNumber,
         orderPrice: order.amount,
+        address: order.address,
+        product:order.product,
       }));
 
       const result = await whatsappService.sendBulkOrderConfirmations(ordersData, flowId);

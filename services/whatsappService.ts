@@ -20,11 +20,16 @@ export interface SendOrderConfirmationDto {
   customerName: string;
   orderNumber: string;
   orderPrice: number;
-  flowId: number;
+  product: string;
+  address: string;
 }
+
+const WHATSAPP_FLOW_ID = 1767708715182;
+const WHATSAPP_ACCESS_TOKEN = '1869075.Ck1AL0IeLRhWnJFXsHScu99iUlBgsbf77xBvlvlVG6FIQ';
 
 export const whatsappService = {
   sendOrderConfirmation: async (data: SendOrderConfirmationDto): Promise<void> => {
+    console.log('SendOrderConfirmation',data);
     const requestBody: SendWhatsAppDto = {
       phone: data.phone,
       email: '',
@@ -33,22 +38,41 @@ export const whatsappService = {
       actions: [
         {
           action: 'set_field_value',
-          field_name: 'order_number',
+          field_name: 'order_main_id',
           value: data.orderNumber,
         },
         {
           action: 'set_field_value',
-          field_name: 'order_price',
-          value: data.orderPrice,
+          field_name: 'full_name',
+          value: data.customerName,
+        },
+        {
+          action: 'set_field_value',
+          field_name: 'order items',
+          value: data.product,
+        },
+        {
+          action: 'set_field_value',
+          field_name: 'order total amount',
+          value: data.orderPrice.toLocaleString('en-US'),
+        },
+        {
+          action: 'set_field_value',
+          field_name: 'order delivery address',
+          value: data.address,
         },
         {
           action: 'send_flow',
-          flow_id: data.flowId,
+          flow_id: WHATSAPP_FLOW_ID,
         },
       ],
     };
 
-    await axios.post('https://app.thewhatbot.com/api/contacts', requestBody);
+    await axios.post('https://app.thewhatbot.com/api/contacts', requestBody, {
+      headers: {
+        'X-ACCESS-TOKEN': WHATSAPP_ACCESS_TOKEN,
+      },
+    });
   },
 
   sendBulkOrderConfirmations: async (
@@ -57,8 +81,9 @@ export const whatsappService = {
       customerName: string;
       orderNumber: string;
       orderPrice: number;
-    }>,
-    flowId: number
+      product: string;
+      address: string;
+    }>
   ): Promise<{ success: number; failed: number; errors: Array<{ orderNumber: string; error: string }> }> => {
     let success = 0;
     let failed = 0;
@@ -66,10 +91,7 @@ export const whatsappService = {
 
     for (const order of orders) {
       try {
-        await whatsappService.sendOrderConfirmation({
-          ...order,
-          flowId,
-        });
+        await whatsappService.sendOrderConfirmation(order);
         success++;
       } catch (error: any) {
         failed++;
