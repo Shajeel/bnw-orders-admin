@@ -1,4 +1,4 @@
-import axios from 'axios';
+import apiClient from '@/utils/axios';
 
 export interface WhatsAppAction {
   action: 'set_field_value' | 'send_flow';
@@ -25,11 +25,10 @@ export interface SendOrderConfirmationDto {
 }
 
 const WHATSAPP_FLOW_ID = 1767708715182;
-const WHATSAPP_ACCESS_TOKEN = '1869075.Ck1AL0IeLRhWnJFXsHScu99iUlBgsbf77xBvlvlVG6FIQ';
 
 export const whatsappService = {
   sendOrderConfirmation: async (data: SendOrderConfirmationDto): Promise<void> => {
-    console.log('SendOrderConfirmation',data);
+    console.log('SendOrderConfirmation', data);
     const requestBody: SendWhatsAppDto = {
       phone: data.phone,
       email: '',
@@ -68,11 +67,7 @@ export const whatsappService = {
       ],
     };
 
-    await axios.post('https://app.thewhatbot.com/api/contacts', requestBody, {
-      headers: {
-        'X-ACCESS-TOKEN': WHATSAPP_ACCESS_TOKEN,
-      },
-    });
+    await apiClient.post('/whatsapp/send-message', requestBody);
   },
 
   sendBulkOrderConfirmations: async (

@@ -520,8 +520,8 @@ const BankOrdersPage = () => {
         customerName: order.customerName,
         orderNumber: order.poNumber,
         orderPrice: Math.abs(order.redeemedPoints),
-        address: order.address,
-        product:order.product,
+        address: `${order.address}, ${order.city}`,
+        product: order.product,
       }));
 
       const result = await whatsappService.sendBulkOrderConfirmations(ordersData);
