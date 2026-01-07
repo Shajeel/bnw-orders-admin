@@ -156,20 +156,6 @@ const BipOrdersPage = () => {
     }
   };
 
-  const getStatusBadgeVariant = (status: OrderStatus): 'success' | 'warning' | 'info' | 'default' => {
-    switch (status) {
-      case 'Delivered':
-        return 'success';
-      case 'Dispatched':
-      case 'Processing':
-        return 'info';
-      case 'Confirmed':
-        return 'warning';
-      case 'Pending':
-      default:
-        return 'default';
-    }
-  };
 
   const handleImport = async (bankId: string, file: File) => {
     try {
@@ -786,7 +772,7 @@ const BipOrdersPage = () => {
           >
             <ShoppingCart size={18} />
           </button>
-          {order.status === 'Processing' && (
+          {order.status === 'processing' && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -798,7 +784,7 @@ const BipOrdersPage = () => {
               <Truck size={18} />
             </button>
           )}
-          {order.status === 'Dispatched' && order.shipmentId && (
+          {order.status === 'dispatched' && order.shipmentId && (
             <button
               onClick={(e) => {
                 e.stopPropagation();

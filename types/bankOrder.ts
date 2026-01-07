@@ -1,4 +1,4 @@
-export type OrderStatus = 'Pending' | 'Confirmed' | 'Processing' | 'Dispatched' | 'Delivered';
+export type OrderStatus = 'pending' | 'confirmed' | 'processing' | 'dispatched' | 'delivered';
 
 export interface BankOrder {
   _id: string;

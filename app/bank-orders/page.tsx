@@ -156,20 +156,6 @@ const BankOrdersPage = () => {
     }
   };
 
-  const getStatusBadgeVariant = (status: OrderStatus): 'success' | 'warning' | 'info' | 'default' => {
-    switch (status) {
-      case 'Delivered':
-        return 'success';
-      case 'Dispatched':
-      case 'Processing':
-        return 'info';
-      case 'Confirmed':
-        return 'warning';
-      case 'Pending':
-      default:
-        return 'default';
-    }
-  };
 
   const handleImport = async (bankId: string, file: File) => {
     try {
@@ -206,7 +192,7 @@ const BankOrdersPage = () => {
 
       // Update the order status to "Processing" after creating PO
       if (selectedOrderForPO) {
-        await bankOrderService.updateStatus(selectedOrderForPO._id, 'Processing');
+        await bankOrderService.updateStatus(selectedOrderForPO._id, 'processing');
       }
 
       handleClosePOModal();
@@ -776,7 +762,7 @@ const BankOrdersPage = () => {
           >
             <ShoppingCart size={18} />
           </button>
-          {order.status === 'Processing' && (
+          {order.status === 'processing' && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -788,7 +774,7 @@ const BankOrdersPage = () => {
               <Truck size={18} />
             </button>
           )}
-          {order.status === 'Dispatched' && order.shipmentId && (
+          {order.status === 'dispatched' && order.shipmentId && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
