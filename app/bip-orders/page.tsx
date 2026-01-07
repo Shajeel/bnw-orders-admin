@@ -206,7 +206,7 @@ const BipOrdersPage = () => {
 
       // Update the order status to "processing" after creating PO
       if (selectedOrderForPO) {
-        await bipService.updateStatus(selectedOrderForPO._id, 'Processing');
+        await bipService.updateStatus(selectedOrderForPO._id, 'processing');
       }
 
       handleClosePOModal();
@@ -442,7 +442,7 @@ const BipOrdersPage = () => {
       // Update all selected orders to "processing" status
       await Promise.all(
         selectedOrders.map(order =>
-          bipService.updateStatus(order._id, 'Processing')
+          bipService.updateStatus(order._id, 'processing')
         )
       );
 
@@ -798,7 +798,7 @@ const BipOrdersPage = () => {
               <Truck size={18} />
             </button>
           )}
-          {order.status === 'Dispatched' && order.shipmentId && (
+          {order.status === 'dispatched' && order.shipmentId && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
