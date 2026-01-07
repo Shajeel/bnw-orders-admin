@@ -270,7 +270,7 @@ const CourierDispatchModal: React.FC<CourierDispatchModalProps> = ({
               )}
 
               {/* Declared Value */}
-              <div>
+              <div className="hidden">
                 <label className="block mb-2.5 text-sm font-semibold text-gray-700">
                   Declared Value (Optional)
                 </label>
@@ -278,7 +278,7 @@ const CourierDispatchModal: React.FC<CourierDispatchModalProps> = ({
                   type="number"
                   min="0"
                   step="0.01"
-                  value={declaredValue}
+                  value={10}
                   onChange={(e) => setDeclaredValue(e.target.value)}
                   placeholder="Enter declared value"
                   className="bg-white border-2 border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 block w-full px-4 py-3 transition-all duration-200 placeholder:text-gray-400"
