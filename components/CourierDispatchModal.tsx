@@ -31,7 +31,7 @@ const CourierDispatchModal: React.FC<CourierDispatchModalProps> = ({
   const [selectedCourier, setSelectedCourier] = useState<'tcs' | 'leopards' | ''>('');
   const [declaredValue, setDeclaredValue] = useState<string>(defaultDeclaredValue.toString());
   const [productDescription, setProductDescription] = useState<string>(defaultProductDescription);
-  const [remarks, setRemarks] = useState<string>('');
+  const [remarks, setRemarks] = useState<string>('Handle with care');
   const [trackingNumber, setTrackingNumber] = useState<string>('');
   const [consignmentNumber, setConsignmentNumber] = useState<string>('');
   const [error, setError] = useState('');
@@ -111,7 +111,7 @@ const CourierDispatchModal: React.FC<CourierDispatchModalProps> = ({
     }
 
     if (remarks.trim()) {
-      dispatchData.remarks = remarks.trim();
+      dispatchData.specialInstructions = remarks.trim();
     }
 
     try {

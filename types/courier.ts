@@ -12,7 +12,7 @@ export interface DispatchOrderRequest {
   courierType: 'tcs' | 'leopards';
   declaredValue?: number;
   productDescription?: string;
-  remarks?: string;
+  specialInstructions?: string;
   isManualDispatch?: boolean;
   trackingNumber?: string;
   consignmentNumber?: string;
