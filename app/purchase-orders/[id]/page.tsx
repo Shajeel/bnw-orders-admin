@@ -237,7 +237,7 @@ const PurchaseOrderDetailPage = () => {
                       <div>
                         <div className="font-medium">{product.productName}</div>
                         <div className="text-xs text-gray-600 mt-0.5">
-                          Gift Code: <span className="font-mono font-semibold">{product.bankProductNumber}</span>
+                          Code: <span className="font-mono font-semibold">{product.bankProductNumber}</span>
                         </div>
                       </div>
                     </td>
